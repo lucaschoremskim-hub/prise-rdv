@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { STRINGS } from './strings.js'
 
 const KEY = 'prise-rdv-v1'
 
@@ -25,7 +26,7 @@ export const DEFAULT_SETTINGS = {
 // Prestations et coiffeurs vides au départ : le commerçant les crée.
 export const initialState = { settings: DEFAULT_SETTINGS, services: [], staff: [], bookings: [], myBookingIds: [] }
 
-export const salonTitle = (settings) => settings.salonName.trim() || 'Votre salon'
+export const salonTitle = (settings, lang = 'fr') => settings.salonName.trim() || STRINGS[lang].common.defaultSalonName
 
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
 

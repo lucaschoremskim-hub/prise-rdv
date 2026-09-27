@@ -10,7 +10,7 @@ export const emailEnabled = Boolean(SERVICE_ID && TEMPLATE_ID && PUBLIC_KEY)
 
 // Variables disponibles dans le modèle EmailJS : {{to_email}}, {{to_name}}, {{salon_name}},
 // {{service_name}}, {{staff_name}}, {{date}}, {{time}}, {{duration}}, {{price}}, {{phone}}.
-export async function sendConfirmationEmail(booking, salonName) {
+export async function sendConfirmationEmail(booking, salonName, lang = 'fr') {
   if (!emailEnabled) return { sent: false, reason: 'disabled' }
   try {
     const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -26,10 +26,10 @@ export async function sendConfirmationEmail(booking, salonName) {
           salon_name: salonName,
           service_name: booking.serviceName,
           staff_name: booking.staffName,
-          date: formatLongDate(booking.date),
-          time: minToLabel(booking.start),
-          duration: formatDuration(booking.end - booking.start),
-          price: formatPrice(booking.price),
+          date: formatLongDate(booking.date, lang),
+          time: minToLabel(booking.start, lang),
+          duration: formatDuration(booking.end - booking.start, lang),
+          price: formatPrice(booking.price, lang),
           phone: booking.phone,
         },
       }),

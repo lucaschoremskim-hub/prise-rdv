@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { salonTitle, useStore } from './lib/store'
-import { Icon, Toast } from './components/ui'
+import { useLang } from './lib/i18n.jsx'
+import { Icon, LanguageSwitch, Toast } from './components/ui'
 import Booking from './views/Booking'
 import MyBookings from './views/MyBookings'
 import Pro from './views/Pro'
@@ -10,6 +11,7 @@ const readRoute = () => window.location.hash.replace(/^#\/?/, '') || 'reserver'
 
 export default function App() {
   const [state, setState] = useStore()
+  const { lang, setLang, s } = useLang()
   const [route, setRoute] = useState(readRoute)
   const [toast, setToast] = useState('')
 
@@ -23,8 +25,8 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    document.title = `${salonTitle(state.settings)} · Réservation en ligne`
-  }, [state.settings])
+    document.title = `${salonTitle(state.settings, lang)} ${s.common.titleSuffix}`
+  }, [state.settings, lang, s])
 
   const notify = useCallback((msg) => {
     setToast(msg)
@@ -41,7 +43,7 @@ export default function App() {
       bookings: s.bookings.map((b) => (b.id === id ? { ...b, status: 'cancelled', cancelledBy: by, cancelledAt: new Date().toISOString() } : b)),
     }))
 
-  const title = salonTitle(state.settings)
+  const title = salonTitle(state.settings, lang)
 
   if (route === 'pro') {
     return (
@@ -64,12 +66,13 @@ export default function App() {
         <nav className="topbar-links">
           <a href="#/mes-rdv" className={`chip-link${route === 'mes-rdv' ? ' active' : ''}`}>
             <Icon name="calendar" size={15} />
-            <span>Mes RDV</span>
+            <span>{s.nav.myBookings}</span>
           </a>
-          <a href="#/pro" className="chip-link" aria-label="Espace commerçant">
+          <a href="#/pro" className="chip-link" aria-label={s.nav.proAria}>
             <Icon name="lock" size={15} />
-            <span>Pro</span>
+            <span>{s.nav.pro}</span>
           </a>
+          <LanguageSwitch lang={lang} setLang={setLang} />
         </nav>
       </header>
       <main className="container">
@@ -79,7 +82,7 @@ export default function App() {
           <Booking state={state} addBooking={addBooking} cancelBooking={cancelBooking} notify={notify} />
         )}
       </main>
-      <footer className="foot">Démo portfolio · données enregistrées sur cet appareil uniquement</footer>
+      <footer className="foot">{s.common.footer}</footer>
       <Toast message={toast} />
     </div>
   )

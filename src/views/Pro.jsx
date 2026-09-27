@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Icon } from '../components/ui'
+import { Icon, LanguageSwitch } from '../components/ui'
+import { useLang } from '../lib/i18n.jsx'
 import { DEFAULT_SETTINGS, salonTitle } from '../lib/store'
 import Planning from './pro/Planning'
 import Services from './pro/Services'
@@ -7,12 +8,12 @@ import Team from './pro/Team'
 import Hours from './pro/Hours'
 import Settings from './pro/Settings'
 
-const TABS = [
-  { id: 'planning', label: 'Planning', icon: 'calendar' },
-  { id: 'services', label: 'Prestations', icon: 'scissors' },
-  { id: 'team', label: 'Équipe', icon: 'users' },
-  { id: 'hours', label: 'Horaires', icon: 'clock' },
-  { id: 'settings', label: 'Réglages', icon: 'settings' },
+const TAB_IDS = [
+  { id: 'planning', icon: 'calendar' },
+  { id: 'services', icon: 'scissors' },
+  { id: 'team', icon: 'users' },
+  { id: 'hours', icon: 'clock' },
+  { id: 'settings', icon: 'settings' },
 ]
 
 const SESSION_KEY = 'prise-rdv-pro'
@@ -25,6 +26,7 @@ const readUnlocked = () => {
 }
 
 export default function Pro({ state, setState, cancelBooking, notify }) {
+  const { lang, setLang, s } = useLang()
   const [unlocked, setUnlocked] = useState(readUnlocked)
   const [tab, setTab] = useState('planning')
 
@@ -45,7 +47,7 @@ export default function Pro({ state, setState, cancelBooking, notify }) {
     window.location.hash = '#/'
   }
 
-  if (!unlocked) return <PinScreen pin={state.settings.pin} title={salonTitle(state.settings)} onSuccess={unlock} />
+  if (!unlocked) return <PinScreen pin={state.settings.pin} title={salonTitle(state.settings, lang)} onSuccess={unlock} lang={lang} setLang={setLang} />
 
   const props = { state, setState, notify, goTab: setTab }
   return (
@@ -56,26 +58,27 @@ export default function Pro({ state, setState, cancelBooking, notify }) {
             <Icon name="store" size={16} />
           </span>
           <span>
-            <span className="brand-name">{salonTitle(state.settings)}</span>
-            <small className="brand-sub">Espace commerçant</small>
+            <span className="brand-name">{salonTitle(state.settings, lang)}</span>
+            <small className="brand-sub">{s.pro.brandSub}</small>
           </span>
         </div>
         <nav className="topbar-links">
           <a href="#/" className="chip-link">
             <Icon name="user" size={15} />
-            <span>Vue client</span>
+            <span>{s.nav.clientView}</span>
           </a>
-          <button className="chip-link" onClick={lock} aria-label="Verrouiller">
+          <button className="chip-link" onClick={lock} aria-label={s.nav.lockAria}>
             <Icon name="lock" size={15} />
           </button>
+          <LanguageSwitch lang={lang} setLang={setLang} />
         </nav>
       </header>
 
-      <nav className="tabs" aria-label="Sections">
-        {TABS.map((t) => (
+      <nav className="tabs" aria-label={s.pro.sectionsAria}>
+        {TAB_IDS.map((t) => (
           <button key={t.id} className={tab === t.id ? 'active' : ''} onClick={() => setTab(t.id)} aria-current={tab === t.id}>
             <Icon name={t.icon} size={20} />
-            <span>{t.label}</span>
+            <span>{s.pro.tabs[t.id]}</span>
           </button>
         ))}
       </nav>
@@ -93,7 +96,8 @@ export default function Pro({ state, setState, cancelBooking, notify }) {
   )
 }
 
-function PinScreen({ pin, title, onSuccess }) {
+function PinScreen({ pin, title, onSuccess, lang, setLang }) {
+  const { s } = useLang()
   const [value, setValue] = useState('')
   const [error, setError] = useState(false)
 
@@ -124,20 +128,23 @@ function PinScreen({ pin, title, onSuccess }) {
 
   return (
     <div className="pin-screen step-anim">
-      <a href="#/" className="icon-btn pin-back" aria-label="Retour à la vue client">
+      <a href="#/" className="icon-btn pin-back" aria-label={s.pin.backAria}>
         <Icon name="back" />
       </a>
+      <div className="pin-lang">
+        <LanguageSwitch lang={lang} setLang={setLang} />
+      </div>
       <span className="brand-mark big">
         <Icon name="lock" size={24} />
       </span>
-      <p className="eyebrow">Espace commerçant</p>
+      <p className="eyebrow">{s.pin.eyebrow}</p>
       <h1 className="display small-display">{title}</h1>
-      <div className={`pin-dots${error ? ' shake' : ''}`} aria-live="polite" aria-label={`${value.length} chiffres saisis`}>
+      <div className={`pin-dots${error ? ' shake' : ''}`} aria-live="polite" aria-label={s.pin.enterAria(value.length)}>
         {[0, 1, 2, 3].map((i) => (
           <i key={i} className={i < value.length ? 'on' : ''} />
         ))}
       </div>
-      <p className={`pin-msg${error ? ' error' : ''}`}>{error ? 'Code incorrect' : 'Saisissez votre code'}</p>
+      <p className={`pin-msg${error ? ' error' : ''}`}>{error ? s.pin.wrong : s.pin.enter}</p>
       <div className="pinpad">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => (
           <button key={d} onClick={() => press(d)}>
@@ -146,11 +153,11 @@ function PinScreen({ pin, title, onSuccess }) {
         ))}
         <span />
         <button onClick={() => press('0')}>0</button>
-        <button onClick={() => setValue((v) => v.slice(0, -1))} aria-label="Effacer">
+        <button onClick={() => setValue((v) => v.slice(0, -1))} aria-label={s.pin.eraseAria}>
           <Icon name="back" />
         </button>
       </div>
-      {pin === DEFAULT_SETTINGS.pin && <p className="muted tiny">Code de démonstration : {DEFAULT_SETTINGS.pin}</p>}
+      {pin === DEFAULT_SETTINGS.pin && <p className="muted tiny">{s.pin.demo(DEFAULT_SETTINGS.pin)}</p>}
     </div>
   )
 }

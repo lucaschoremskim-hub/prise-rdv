@@ -189,6 +189,34 @@ p {
   border-color: var(--line-strong);
   background: rgba(201, 164, 92, 0.07);
 }
+.lang-switch {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.lang-switch button {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  transition: 0.2s;
+}
+.lang-switch button.active {
+  color: #1b1509;
+  background: linear-gradient(135deg, var(--gold-2), var(--gold));
+}
+.pin-lang {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  right: 12px;
+}
+
 .foot {
   text-align: center;
   color: #5f5a52;

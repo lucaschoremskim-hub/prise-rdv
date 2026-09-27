@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useLang } from '../lib/i18n.jsx'
 
 const PATHS = {
   back: 'M19 12H5M11 6l-6 6 6 6',
@@ -56,8 +57,23 @@ export function Field({ label, error, hint, children }) {
   )
 }
 
+// Sélecteur de langue français / anglais.
+export function LanguageSwitch({ lang, setLang }) {
+  return (
+    <div className="lang-switch" role="group" aria-label="Français / English">
+      <button className={lang === 'fr' ? 'active' : ''} onClick={() => setLang('fr')} aria-pressed={lang === 'fr'}>
+        FR
+      </button>
+      <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')} aria-pressed={lang === 'en'}>
+        EN
+      </button>
+    </div>
+  )
+}
+
 // Fenêtre de confirmation (et feuille bas d'écran sur téléphone).
 export function Sheet({ title, children, onClose }) {
+  const { s } = useLang()
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -73,7 +89,7 @@ export function Sheet({ title, children, onClose }) {
       <div className="sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-head">
           <h3>{title}</h3>
-          <button className="icon-btn" onClick={onClose} aria-label="Fermer">
+          <button className="icon-btn" onClick={onClose} aria-label={s.ui.close}>
             <Icon name="x" />
           </button>
         </div>
@@ -85,12 +101,13 @@ export function Sheet({ title, children, onClose }) {
 }
 
 export function Confirm({ title, text, confirmLabel, danger, onConfirm, onCancel }) {
+  const { s } = useLang()
   return (
     <Sheet title={title} onClose={onCancel}>
       <p className="muted">{text}</p>
       <div className="sheet-actions">
         <button className="btn btn-ghost" onClick={onCancel}>
-          Retour
+          {s.ui.back}
         </button>
         <button className={`btn ${danger ? 'btn-danger' : 'btn-gold'}`} onClick={onConfirm}>
           {confirmLabel}

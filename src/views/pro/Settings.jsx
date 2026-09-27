@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Confirm, Field, Icon } from '../../components/ui'
+import { useLang } from '../../lib/i18n.jsx'
 import { initialState } from '../../lib/store'
 import { emailEnabled } from '../../lib/email'
 
@@ -7,13 +8,14 @@ const HORIZONS = [7, 14, 30, 60, 90]
 const BUFFERS = [0, 5, 10, 15]
 
 export default function Settings({ state, setState, notify }) {
+  const { s } = useLang()
   const { settings } = state
   const [name, setName] = useState(settings.salonName)
   const [pin, setPin] = useState('')
   const [askReset, setAskReset] = useState(false)
 
   const patch = (p, msg) => {
-    setState((s) => ({ ...s, settings: { ...s.settings, ...p } }))
+    setState((st) => ({ ...st, settings: { ...st.settings, ...p } }))
     notify(msg)
   }
 
@@ -21,97 +23,97 @@ export default function Settings({ state, setState, notify }) {
 
   return (
     <>
-      <h1 className="page-title">Réglages</h1>
+      <h1 className="page-title">{s.settings.title}</h1>
 
       <div className="panel">
-        <h2 className="section-title">Salon</h2>
+        <h2 className="section-title">{s.settings.salonPanel}</h2>
         <form
           className="inline-form"
           onSubmit={(e) => {
             e.preventDefault()
-            patch({ salonName: name.trim() }, 'Nom enregistré')
+            patch({ salonName: name.trim() }, s.settings.notifyNameSaved)
           }}
         >
-          <Field label="Nom affiché aux clients" hint="Vide = « Votre salon ».">
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Votre salon" />
+          <Field label={s.settings.salonNameLabel} hint={s.settings.salonNameHint}>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={s.settings.salonNamePlaceholder} />
           </Field>
           <button className="btn btn-gold btn-sm" type="submit" disabled={name.trim() === settings.salonName}>
-            Enregistrer
+            {s.common.save}
           </button>
         </form>
       </div>
 
       <div className="panel">
-        <h2 className="section-title">Règles de réservation</h2>
-        <Field label="Réservation possible jusqu’à">
-          <select value={settings.horizonDays} onChange={(e) => patch({ horizonDays: Number(e.target.value) }, 'Horizon enregistré')}>
+        <h2 className="section-title">{s.settings.rulesPanel}</h2>
+        <Field label={s.settings.horizonLabel}>
+          <select value={settings.horizonDays} onChange={(e) => patch({ horizonDays: Number(e.target.value) }, s.settings.notifyHorizonSaved)}>
             {HORIZONS.map((d) => (
               <option key={d} value={d}>
-                {d} jours à l’avance{d === 30 ? ' (1 mois)' : ''}
+                {s.settings.horizonOption(d)}
               </option>
             ))}
           </select>
         </Field>
-        <Field label="Battement entre deux rendez-vous" hint="Temps de préparation ajouté après chaque rendez-vous d’un coiffeur.">
-          <select value={settings.bufferMin} onChange={(e) => patch({ bufferMin: Number(e.target.value) }, 'Battement enregistré')}>
+        <Field label={s.settings.bufferLabel} hint={s.settings.bufferHint}>
+          <select value={settings.bufferMin} onChange={(e) => patch({ bufferMin: Number(e.target.value) }, s.settings.notifyBufferSaved)}>
             {BUFFERS.map((b) => (
               <option key={b} value={b}>
-                {b ? `${b} minutes` : 'Aucun'}
+                {s.settings.bufferOption(b)}
               </option>
             ))}
           </select>
         </Field>
-        <p className="muted small">Délai minimum : réservation au plus tard 2 heures avant le rendez-vous. Créneaux enchaînés selon la durée de la prestation.</p>
+        <p className="muted small">{s.settings.rulesNote}</p>
       </div>
 
       <div className="panel">
-        <h2 className="section-title">Code d’accès</h2>
+        <h2 className="section-title">{s.settings.pinPanel}</h2>
         <form
           className="inline-form"
           onSubmit={(e) => {
             e.preventDefault()
             if (!pinValid) return
-            patch({ pin }, 'Code modifié')
+            patch({ pin }, s.settings.notifyPinChanged)
             setPin('')
           }}
         >
-          <Field label="Nouveau code (4 chiffres)" hint="Protection de démonstration, sans vraie sécurité.">
+          <Field label={s.settings.pinLabel} hint={s.settings.pinHint}>
             <input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} inputMode="numeric" placeholder="••••" />
           </Field>
           <button className="btn btn-gold btn-sm" type="submit" disabled={!pinValid}>
-            Changer
+            {s.settings.change}
           </button>
         </form>
       </div>
 
       <div className="panel">
-        <h2 className="section-title">E-mail de confirmation</h2>
+        <h2 className="section-title">{s.settings.emailPanel}</h2>
         <p className={`email-status email-${emailEnabled ? 'sent' : 'disabled'}`}>
           <Icon name="mail" size={16} />
-          {emailEnabled ? 'Activé : chaque client reçoit un e-mail (via EmailJS).' : 'Non configuré : confirmation à l’écran et fichier agenda seulement.'}
+          {emailEnabled ? s.settings.emailOn : s.settings.emailOff}
         </p>
       </div>
 
       <div className="panel danger-zone">
-        <h2 className="section-title">Données de démonstration</h2>
-        <p className="muted small">Tout est enregistré dans ce navigateur uniquement. La réinitialisation efface prestations, équipe, rendez-vous et réglages.</p>
+        <h2 className="section-title">{s.settings.demoPanel}</h2>
+        <p className="muted small">{s.settings.demoText}</p>
         <button className="btn btn-ghost danger" onClick={() => setAskReset(true)}>
-          <Icon name="trash" size={16} /> Réinitialiser la démo
+          <Icon name="trash" size={16} /> {s.settings.resetBtn}
         </button>
       </div>
 
       {askReset && (
         <Confirm
-          title="Tout réinitialiser ?"
-          text="L’application reviendra à son état de départ. Cette action est définitive."
-          confirmLabel="Réinitialiser"
+          title={s.settings.resetDialog.title}
+          text={s.settings.resetDialog.text}
+          confirmLabel={s.settings.resetDialog.confirm}
           danger
           onCancel={() => setAskReset(false)}
           onConfirm={() => {
             setState(initialState)
             setName('')
             setAskReset(false)
-            notify('Démo réinitialisée')
+            notify(s.settings.notifyReset)
           }}
         />
       )}

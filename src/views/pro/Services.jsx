@@ -1,18 +1,19 @@
 import { useState } from 'react'
 import { Confirm, Empty, Field, Icon, Sheet } from '../../components/ui'
+import { useLang } from '../../lib/i18n.jsx'
 import { uid } from '../../lib/store'
-import { formatDuration, formatPrice } from '../../lib/time'
 
 export default function Services({ state, setState, notify }) {
+  const { s, fmt } = useLang()
   const { services, staff } = state
   const [editing, setEditing] = useState(null) // prestation en cours d'édition, ou {} pour une nouvelle
   const [toDelete, setToDelete] = useState(null)
 
   const save = (svc, staffIds) => {
-    setState((s) => ({
-      ...s,
-      services: s.services.some((x) => x.id === svc.id) ? s.services.map((x) => (x.id === svc.id ? svc : x)) : [...s.services, svc],
-      staff: s.staff.map((p) => {
+    setState((st) => ({
+      ...st,
+      services: st.services.some((x) => x.id === svc.id) ? st.services.map((x) => (x.id === svc.id ? svc : x)) : [...st.services, svc],
+      staff: st.staff.map((p) => {
         const has = p.serviceIds.includes(svc.id)
         const want = staffIds.includes(p.id)
         if (has === want) return p
@@ -20,32 +21,32 @@ export default function Services({ state, setState, notify }) {
       }),
     }))
     setEditing(null)
-    notify('Prestation enregistrée')
+    notify(s.services.notifySaved)
   }
 
   const remove = (svc) => {
     // Les rendez-vous déjà pris gardent une copie du nom et du prix : rien ne se perd.
-    setState((s) => ({
-      ...s,
-      services: s.services.filter((x) => x.id !== svc.id),
-      staff: s.staff.map((p) => ({ ...p, serviceIds: p.serviceIds.filter((id) => id !== svc.id) })),
+    setState((st) => ({
+      ...st,
+      services: st.services.filter((x) => x.id !== svc.id),
+      staff: st.staff.map((p) => ({ ...p, serviceIds: p.serviceIds.filter((id) => id !== svc.id) })),
     }))
     setToDelete(null)
-    notify('Prestation supprimée')
+    notify(s.services.notifyDeleted)
   }
 
   return (
     <>
       <div className="page-head">
-        <h1 className="page-title">Prestations</h1>
+        <h1 className="page-title">{s.services.title}</h1>
         <button className="btn btn-gold btn-sm" onClick={() => setEditing({})}>
-          <Icon name="plus" size={16} /> Ajouter
+          <Icon name="plus" size={16} /> {s.services.add}
         </button>
       </div>
       {!services.length ? (
-        <Empty icon="scissors" title="Aucune prestation" text="Ajoutez ce que vous proposez, avec sa durée et son prix.">
+        <Empty icon="scissors" title={s.services.empty.title} text={s.services.empty.text}>
           <button className="btn btn-gold" onClick={() => setEditing({})}>
-            <Icon name="plus" size={16} /> Ajouter une prestation
+            <Icon name="plus" size={16} /> {s.services.empty.add}
           </button>
         </Empty>
       ) : (
@@ -57,14 +58,14 @@ export default function Services({ state, setState, notify }) {
                 <div className="card-main">
                   <strong>{svc.name}</strong>
                   <span className="muted small">
-                    {formatDuration(svc.duration)} · {who.length ? who.map((p) => p.name).join(', ') : <em className="warn">aucun coiffeur : invisible pour les clients</em>}
+                    {fmt.duration(svc.duration)} · {who.length ? who.map((p) => p.name).join(', ') : <em className="warn">{s.services.noStaffWarn}</em>}
                   </span>
                 </div>
-                <span className="price">{formatPrice(svc.price)}</span>
-                <button className="icon-btn" onClick={() => setEditing(svc)} aria-label={`Modifier ${svc.name}`}>
+                <span className="price">{fmt.price(svc.price)}</span>
+                <button className="icon-btn" onClick={() => setEditing(svc)} aria-label={s.services.editAria(svc.name)}>
                   <Icon name="edit" size={17} />
                 </button>
-                <button className="icon-btn" onClick={() => setToDelete(svc)} aria-label={`Supprimer ${svc.name}`}>
+                <button className="icon-btn" onClick={() => setToDelete(svc)} aria-label={s.services.deleteAria(svc.name)}>
                   <Icon name="trash" size={17} />
                 </button>
               </div>
@@ -76,9 +77,9 @@ export default function Services({ state, setState, notify }) {
       {editing && <ServiceForm initial={editing} staff={staff} onSave={save} onClose={() => setEditing(null)} />}
       {toDelete && (
         <Confirm
-          title="Supprimer la prestation ?"
-          text={`« ${toDelete.name} » ne sera plus proposée. Les rendez-vous déjà pris sont conservés.`}
-          confirmLabel="Supprimer"
+          title={s.services.deleteDialog.title}
+          text={s.services.deleteDialog.text(toDelete.name)}
+          confirmLabel={s.services.deleteDialog.confirm}
           danger
           onCancel={() => setToDelete(null)}
           onConfirm={() => remove(toDelete)}
@@ -89,6 +90,7 @@ export default function Services({ state, setState, notify }) {
 }
 
 function ServiceForm({ initial, staff, onSave, onClose }) {
+  const { s } = useLang()
   const isNew = !initial.id
   const [name, setName] = useState(initial.name || '')
   const [duration, setDuration] = useState(initial.duration ? String(initial.duration) : '')
@@ -99,14 +101,14 @@ function ServiceForm({ initial, staff, onSave, onClose }) {
   const d = Number(duration)
   const p = Number(String(price).replace(',', '.'))
   const errors = {
-    name: !name.trim() && 'Donnez un nom à la prestation.',
-    duration: (!Number.isInteger(d) || d < 5 || d > 600) && 'Durée en minutes, entre 5 et 600.',
-    price: (price === '' || Number.isNaN(p) || p < 0) && 'Prix en euros (0 accepté).',
+    name: !name.trim() && s.services.errName,
+    duration: (!Number.isInteger(d) || d < 5 || d > 600) && s.services.errDuration,
+    price: (price === '' || Number.isNaN(p) || p < 0) && s.services.errPrice,
   }
   const valid = !errors.name && !errors.duration && !errors.price
 
   return (
-    <Sheet title={isNew ? 'Nouvelle prestation' : 'Modifier la prestation'} onClose={onClose}>
+    <Sheet title={isNew ? s.services.newTitle : s.services.editTitle} onClose={onClose}>
       <form
         className="form"
         noValidate
@@ -116,20 +118,20 @@ function ServiceForm({ initial, staff, onSave, onClose }) {
           if (valid) onSave({ id: initial.id || uid(), name: name.trim(), duration: d, price: Math.round(p * 100) / 100 }, staffIds)
         }}
       >
-        <Field label="Nom" error={tried && errors.name}>
+        <Field label={s.services.nameLabel} error={tried && errors.name}>
           <input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
         </Field>
         <div className="grid-2">
-          <Field label="Durée (min)" error={tried && errors.duration}>
+          <Field label={s.services.durationLabel} error={tried && errors.duration}>
             <input value={duration} onChange={(e) => setDuration(e.target.value)} type="number" inputMode="numeric" min="5" step="5" />
           </Field>
-          <Field label="Prix (€)" error={tried && errors.price}>
+          <Field label={s.services.priceLabel} error={tried && errors.price}>
             <input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" />
           </Field>
         </div>
         {staff.length > 0 && (
           <fieldset className="checks">
-            <legend>Réalisée par</legend>
+            <legend>{s.services.doneBy}</legend>
             {staff.map((pp) => (
               <label key={pp.id} className="check">
                 <input
@@ -143,7 +145,7 @@ function ServiceForm({ initial, staff, onSave, onClose }) {
           </fieldset>
         )}
         <button className="btn btn-gold btn-block" type="submit">
-          Enregistrer
+          {s.common.save}
         </button>
       </form>
     </Sheet>
